@@ -1,0 +1,132 @@
+{
+  "versi_model": "1.0.0",
+  "dibuat": "2026-11-17T13:19:56",
+  "kasus": "07 - Irigasi pintar IoT",
+  "algoritma": "HistGradientBoostingClassifier (scikit-learn) + FiturIrigasi",
+  "hyperparameter": {
+    "learning_rate": 0.05,
+    "max_leaf_nodes": 31,
+    "min_samples_leaf": 20,
+    "max_iter": 300,
+    "class_weight": "balanced"
+  },
+  "threshold": 0.5,
+  "alasan_threshold": "Threshold terendah dengan F1 dalam 0,005 dari maksimum (validasi 4 periode), condong ke recall karena notifikasi terlewat = tanaman stres.",
+  "batas_aman_kelembaban_pct": {
+    "cabai": 32.9,
+    "tomat": 37.0,
+    "selada": 42.9
+  },
+  "jam_siram": [
+    5,
+    17
+  ],
+  "fitur_input": {
+    "tanaman": {
+      "tipe": "kategori",
+      "nilai": [
+        "cabai",
+        "tomat",
+        "selada"
+      ]
+    },
+    "jenis_tanah": {
+      "tipe": "kategori",
+      "nilai": [
+        "pasir",
+        "lempung",
+        "liat"
+      ]
+    },
+    "umur_tanaman_hari": {
+      "tipe": "angka",
+      "min": 0,
+      "max": 365
+    },
+    "kelembaban_tanah_pct": {
+      "tipe": "angka",
+      "min": 0.1,
+      "max": 100,
+      "catatan": "pembacaan sensor terakhir, sebelum disiram"
+    },
+    "suhu_udara_C": {
+      "tipe": "angka",
+      "min": 0,
+      "max": 50
+    },
+    "kelembaban_udara_pct": {
+      "tipe": "angka",
+      "min": 0,
+      "max": 100
+    },
+    "cahaya_lux": {
+      "tipe": "angka",
+      "min": 0,
+      "max": 150000
+    },
+    "curah_hujan_mm": {
+      "tipe": "angka",
+      "min": 0,
+      "max": 100
+    },
+    "prakiraan_hujan_6jam_mm": {
+      "tipe": "angka",
+      "min": 0,
+      "max": 200
+    },
+    "jam": {
+      "tipe": "angka",
+      "min": 0,
+      "max": 23
+    }
+  },
+  "urutan_kolom_input": [
+    "tanaman",
+    "jenis_tanah",
+    "umur_tanaman_hari",
+    "kelembaban_tanah_pct",
+    "suhu_udara_C",
+    "kelembaban_udara_pct",
+    "cahaya_lux",
+    "curah_hujan_mm",
+    "prakiraan_hujan_6jam_mm",
+    "jam"
+  ],
+  "data_latih": {
+    "periode": "2025-08-01 s/d 2025-10-14",
+    "baris": 14321
+  },
+  "metrik": {
+    "validasi_4_periode_f1_rata2_thr0.5": 0.892,
+    "validasi_gabungan_di_threshold": {
+      "F1": 0.901,
+      "Precision": 0.921,
+      "Recall": 0.882
+    },
+    "test": {
+      "periode": "2025-10-15 s/d 2025-10-31",
+      "f1": 0.828,
+      "precision": 0.897,
+      "recall": 0.769,
+      "f1_baseline_wajib": 0.182,
+      "f1_aturan_domain": 0.81
+    }
+  },
+  "masalah_data": {
+    "duplikat": 150,
+    "nama_tanaman_tidak_konsisten": 527,
+    "kelembaban_tanah_mustahil": 35,
+    "sensor_tanah_macet": 84,
+    "cahaya_negatif": 35,
+    "suhu_kosong": 261,
+    "prakiraan_hujan_kosong": 176,
+    "label_positif_malam": 40
+  },
+  "versi_library": {
+    "python": "3.15.2",
+    "scikit-learn": "1.9.1",
+    "pandas": "3.1.1",
+    "numpy": "2.5.5",
+    "joblib": "1.6.0"
+  }
+}
