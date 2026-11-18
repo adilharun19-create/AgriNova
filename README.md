@@ -1,6 +1,6 @@
-# AgriNova — Tim Kasus 07
+# AgriNova · Tim Kasus 07
 
-**Smart Irrigation IoT — Sistem Prediksi Kebutuhan Penyiraman Berbasis Machine Learning**
+**Smart Irrigation IoT · Sistem Prediksi Kebutuhan Penyiraman Berbasis Machine Learning**
 
 - **Kasus:** 7 — Smart Irrigation IoT
 - **Aplikasi publik:** https://agrinova-fslyvdjrtdvbzjmavdy7hk.streamlit.app
