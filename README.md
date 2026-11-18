@@ -6,9 +6,8 @@
 
 | Anggota | NIM | Bagian yang dikerjakan |
 |---|---|---|
-| [nama] | [NIM] | [misalnya EDA dan pembersihan data] |
-| [nama] | [NIM] | [misalnya model dan evaluasi] |
-| [nama] | [NIM] | [misalnya API dan aplikasi] |
+| Adil Harun Alfarizi | 2406176 | Mengerjakan bersama |
+| Arya Adimanggala | 2403676 | Mengerjakan bersama |
 
 ## Masalah dan pengguna
 
