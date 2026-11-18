@@ -2,7 +2,7 @@
 
 > Salin berkas ini menjadi `README.md` di repositori tim kalian, lalu isi semua bagian di dalam kurung siku.
 
-**Kasus:** [nomor dan nama kasus] · **Aplikasi:** [tautan aplikasi] · **Video:** [tautan video]
+**Kasus:** 7 - Smart Irrigation IoT · **Aplikasi:** https://agrinova-fslyvdjrtdvbzjmavdy7hk.streamlit.app · **Video:** [tautan video]
 
 | Anggota | NIM | Bagian yang dikerjakan |
 |---|---|---|
