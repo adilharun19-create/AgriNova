@@ -2,7 +2,7 @@
 
 **Smart Irrigation IoT · Sistem Prediksi Kebutuhan Penyiraman Berbasis Machine Learning**
 
-- **Kasus:** 7 — Smart Irrigation IoT
+- **Kasus:** 7 - Smart Irrigation IoT
 - **Aplikasi publik:** https://agrinova-fslyvdjrtdvbzjmavdy7hk.streamlit.app
 - **Repositori:** https://github.com/adilharun19-create/AgriNova
 - **Video demonstrasi:** Belum dicantumkan; tambahkan tautan setelah video diunggah.
