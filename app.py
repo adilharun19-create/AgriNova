@@ -2,14 +2,14 @@ import html
 from datetime import datetime
 
 import pandas as pd
-import requests
 import streamlit as st
+
+from src.predictor import health as check_model_health, predict as run_prediction
 
 # ============================================================
 # AGRINOVA — APPLE-INSPIRED LIQUID GLASS FRONTEND
-# Backend contract is intentionally unchanged:
-#   GET  http://127.0.0.1:8000/health
-#   POST http://127.0.0.1:8000/predict
+# Deployment mode: Streamlit + local in-process ML inference.
+# No separate FastAPI server is required on Streamlit Community Cloud.
 # ============================================================
 
 st.set_page_config(
@@ -18,10 +18,6 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
 )
-
-API_BASE = "http://127.0.0.1:8000"
-PREDICT_URL = f"{API_BASE}/predict"
-HEALTH_URL = f"{API_BASE}/health"
 
 # Unsplash image: aerial rice terraces in Sidemen, Bali.
 # A dark overlay keeps foreground text readable; CSS gradient is the fallback.
@@ -34,8 +30,8 @@ if "history" not in st.session_state:
     st.session_state.history = []
 if "latest_prediction" not in st.session_state:
     st.session_state.latest_prediction = None
-if "api_online" not in st.session_state:
-    st.session_state.api_online = False
+if "model_ready" not in st.session_state:
+    st.session_state.model_ready = False
 
 
 # ============================================================
@@ -522,20 +518,20 @@ def recommendation_panel(result):
                 st.write(f"• {reason}")
 
 
-def fetch_api_status():
+def fetch_model_status():
+    """Check that the local ML model and metadata were loaded successfully."""
     try:
-        response = requests.get(HEALTH_URL, timeout=3)
-        return response.status_code == 200
-    except requests.RequestException:
+        return bool(check_model_health().get("model_loaded", False))
+    except Exception:
         return False
 
 
 # ============================================================
-# API STATUS
+# MODEL STATUS
 # ============================================================
 
-st.session_state.api_online = fetch_api_status()
-api_online = st.session_state.api_online
+st.session_state.model_ready = fetch_model_status()
+model_ready = st.session_state.model_ready
 
 
 # ============================================================
@@ -562,19 +558,19 @@ with st.sidebar:
         label_visibility="collapsed",
     )
     st.markdown("---")
-    if api_online:
+    if model_ready:
         st.markdown(
-            '<div class="status-chip"><span class="status-dot"></span> API CONNECTED</div>',
+            '<div class="status-chip"><span class="status-dot"></span> MODEL READY</div>',
             unsafe_allow_html=True,
         )
     else:
         st.markdown(
-            '<div style="color:#9a5a3e;font-size:11px;font-weight:700;">API DISCONNECTED</div>',
+            '<div style="color:#9a5a3e;font-size:11px;font-weight:700;">MODEL UNAVAILABLE</div>',
             unsafe_allow_html=True,
         )
     st.markdown("<br><br>", unsafe_allow_html=True)
     st.caption("MODEL DEPLOYMENT")
-    st.caption("Streamlit · FastAPI · Joblib")
+    st.caption("Streamlit · Python ML · Joblib")
 
 
 # ============================================================
@@ -594,7 +590,7 @@ elif page == "History":
     page_subtitle = "Review the sensor inputs and model outputs recorded in this session."
 else:
     page_title = "System status."
-    page_subtitle = "Application components and backend connectivity."
+    page_subtitle = "Application components and ML model readiness."
 
 st.markdown(f'<div class="page-title">{safe(page_title)}</div>', unsafe_allow_html=True)
 st.markdown(f'<div class="page-subtitle">{safe(page_subtitle)}</div>', unsafe_allow_html=True)
@@ -626,7 +622,7 @@ if page == "Overview":
         probability = 0.0
         decision = False
 
-    status_text = "CONNECTED · MODEL READY" if api_online else "API CONNECTION REQUIRED"
+    status_text = "CONNECTED · MODEL READY" if model_ready else "MODEL NOT READY"
     hero_title = "Your field, understood." if latest else "A smarter way to care for every crop."
     hero_copy = (
         f"Latest analysis for {plant}: soil moisture and environmental conditions have been evaluated by your trained model."
@@ -708,7 +704,7 @@ if page == "Overview":
         recommendation_panel(latest)
     else:
         st.markdown(
-            '<div class="glass-card-strong"><div class="panel-heading">No prediction yet</div><div class="panel-caption">Open New prediction to submit the first set of sensor readings. The dashboard will populate using the actual API response.</div></div>',
+            '<div class="glass-card-strong"><div class="panel-heading">No prediction yet</div><div class="panel-caption">Open New prediction to submit the first set of sensor readings. The dashboard will populate using the actual model prediction.</div></div>',
             unsafe_allow_html=True,
         )
 
@@ -720,7 +716,7 @@ if page == "Overview":
 elif page == "New prediction":
     section_label("01 / Plant and soil conditions")
     st.markdown(
-        '<div class="glass-card-strong" style="margin-bottom:14px;"><div class="panel-heading">Sensor input</div><div class="panel-caption">The field names and JSON payload remain compatible with the existing FastAPI endpoint.</div></div>',
+        '<div class="glass-card-strong" style="margin-bottom:14px;"><div class="panel-heading">Sensor input</div><div class="panel-caption">Enter the latest plant and environmental readings for the trained model.</div></div>',
         unsafe_allow_html=True,
     )
 
@@ -746,10 +742,10 @@ elif page == "New prediction":
         submitted = st.form_submit_button("Analyze irrigation needs", use_container_width=True)
 
     if submitted:
-        if not api_online:
-            st.error("FastAPI is not connected. Start the backend first, then retry.")
+        if not model_ready:
+            st.error("The ML model is not ready. Check the deployment logs and model artifact.")
         else:
-            # Keep the existing API payload keys exactly as defined in src/api.py.
+            # Keep the sensor fields aligned with the trained model input schema.
             payload = {
                 "tanaman": tanaman,
                 "jenis_tanah": jenis_tanah,
@@ -764,27 +760,23 @@ elif page == "New prediction":
             }
             try:
                 with st.spinner("Analyzing field conditions..."):
-                    response = requests.post(PREDICT_URL, json=payload, timeout=30)
-                if response.status_code == 200:
-                    result = response.json()
-                    st.session_state.latest_prediction = result
-                    prediction = result.get("hasil_prediksi", {})
-                    st.session_state.history.append({
-                        "time": datetime.now().strftime("%H:%M:%S"),
-                        "plant": tanaman,
-                        "soil_type": jenis_tanah,
-                        "soil_moisture": float(kelembaban_tanah),
-                        "temperature": float(suhu),
-                        "air_humidity": float(kelembaban_udara),
-                        "light_lux": float(cahaya),
-                        "probability": float(prediction.get("probabilitas", 0) or 0),
-                        "irrigation_needed": bool(prediction.get("perlu_siram", False)),
-                    })
-                    st.success("Prediction completed. The overview has been updated.")
-                else:
-                    st.error(f"API error {response.status_code}: {response.text}")
-            except requests.RequestException as exc:
-                st.error(f"Could not reach the prediction API: {exc}")
+                    result = run_prediction(payload)
+                st.session_state.latest_prediction = result
+                prediction = result.get("hasil_prediksi", {})
+                st.session_state.history.append({
+                    "time": datetime.now().strftime("%H:%M:%S"),
+                    "plant": tanaman,
+                    "soil_type": jenis_tanah,
+                    "soil_moisture": float(kelembaban_tanah),
+                    "temperature": float(suhu),
+                    "air_humidity": float(kelembaban_udara),
+                    "light_lux": float(cahaya),
+                    "probability": float(prediction.get("probabilitas", 0) or 0),
+                    "irrigation_needed": bool(prediction.get("perlu_siram", False)),
+                })
+                st.success("Prediction completed. The overview has been updated.")
+            except Exception as exc:
+                st.error(f"Prediction failed: {exc}")
 
     if st.session_state.latest_prediction:
         st.markdown("<br>", unsafe_allow_html=True)
@@ -843,15 +835,15 @@ elif page == "History":
 # ============================================================
 
 else:
-    section_label("01 / Service health")
-    status_text = "Connected" if api_online else "Disconnected"
-    status_color = "#376b46" if api_online else "#a14e3d"
+    section_label("01 / Model health")
+    status_text = "Ready" if model_ready else "Unavailable"
+    status_color = "#376b46" if model_ready else "#a14e3d"
     st.markdown(
         f"""
         <div class="glass-card-strong">
-            <div class="panel-heading">FastAPI service</div>
+            <div class="panel-heading">Machine Learning engine</div>
             <div style="font:800 24px 'Manrope';color:{status_color};margin-top:10px;">{status_text}</div>
-            <div class="panel-caption">Health endpoint: GET /health</div>
+            <div class="panel-caption">Model and metadata are loaded inside the Streamlit application.</div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -862,11 +854,11 @@ else:
     with arch_cols[0]:
         metric_card("Frontend", "Streamlit", "Liquid Glass interface", "01")
     with arch_cols[1]:
-        metric_card("Backend", "FastAPI", "Existing REST API", "02")
+        metric_card("Inference", "Python", "Integrated prediction engine", "02")
     with arch_cols[2]:
         metric_card("Model artifact", "Joblib", "Existing trained model", "03")
     st.markdown(
-        '<div class="glass-card" style="margin-top:16px;"><div class="card-label">PREDICTION ENDPOINT</div><div class="card-value" style="font-size:19px;">POST /predict</div><div class="card-note">The frontend sends the existing sensor JSON schema to the current API.</div></div>',
+        '<div class="glass-card" style="margin-top:16px;"><div class="card-label">PREDICTION PROCESS</div><div class="card-value" style="font-size:19px;">Local model inference</div><div class="card-note">Sensor inputs are passed directly to the loaded ML model. A separate API server is not required for this deployment.</div></div>',
         unsafe_allow_html=True,
     )
 

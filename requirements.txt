@@ -1,12 +1,6 @@
-# Setelah menjalankan notebooks/02_model_final.ipynb di laptop kalian,
-# kunci versi sesuai "versi_library" di artifacts/metadata.json, misalnya scikit-learn==1.5.2
-pandas>=2.0
-numpy>=1.24
-scikit-learn>=1.2
-joblib>=1.2
-matplotlib>=3.7
-fastapi
-uvicorn[standard]
-pydantic
+# Versi inti disamakan dengan lingkungan saat model dilatih (metadata.json).
 streamlit
-requests
+numpy==2.5.5
+pandas==3.1.1
+scikit-learn==1.9.1
+joblib==1.6.0
